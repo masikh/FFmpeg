@@ -466,7 +466,7 @@ static void update_datarate(DataRateData *drd, int64_t count)
 /* In bytes per second */
 static int compute_datarate(DataRateData *drd, int64_t count)
 {
-    if (cur_time == drd->time1)
+    if (cur_time == drd->time1 || cur_time == 0 || drd->time1 == 0)
         return 0;
 
     return ((count - drd->count1) * 1000) / (cur_time - drd->time1);
@@ -1905,10 +1905,16 @@ static inline void print_stream_params(AVIOContext *pb, FFServerStream *stream)
             break;
         case AVMEDIA_TYPE_VIDEO:
             type = "video";
-            snprintf(parameters, sizeof(parameters),
-                     "%dx%d, q=%d-%d, fps=%d", st->codecpar->width,
-                     st->codecpar->height, st->codec->qmin, st->codec->qmax,
-                     st->time_base.den / st->time_base.num);
+            if (st->time_base.num != 0) {
+                snprintf(parameters, sizeof(parameters),
+                         "%dx%d, q=%d-%d, fps=%d", st->codecpar->width,
+                         st->codecpar->height, st->codec->qmin, st->codec->qmax,
+                         st->time_base.den / st->time_base.num);
+            } else {
+                snprintf(parameters, sizeof(parameters),
+                         "%dx%d, q=%d-%d, fps=0", st->codecpar->width,
+                         st->codecpar->height, st->codec->qmin, st->codec->qmax);
+            }
             break;
         default:
             abort();
